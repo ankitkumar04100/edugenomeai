@@ -23,13 +23,16 @@ export function generateInsights(genome: GenomePayload): Insight[] {
     insights.push({ id: `i-${++insightCounter}`, severity: 'warning', trait: 'confidence_drift', message: 'Confidence is drifting downward', action: 'Provide encouragement + easier stepping-stone problems.', icon: '💪' });
   }
   if (t.visual_learning > 75) {
-    insights.push({ id: `i-${++insightCounter}`, severity: 'info', trait: 'visual_learning', message: 'Visual Learning preference detected', action: 'Prefer visual-first explanations with charts and videos.', icon: '🎨' });
+    insights.push({ id: `i-${++insightCounter}`, severity: 'info', trait: 'visual_learning', message: 'Visual Learning preference detected', action: 'Prioritize visual-first problems in the next batch.', icon: '🎨' });
+  }
+  if (t.distraction_vulnerability > 60) {
+    insights.push({ id: `i-${++insightCounter}`, severity: 'warning', trait: 'distraction_vulnerability', message: 'High distraction vulnerability', action: 'Enable distraction-minimized UI mode; minimize elements.', icon: '🔕' });
+  }
+  if (t.error_recovery_time < 55) {
+    insights.push({ id: `i-${++insightCounter}`, severity: 'warning', trait: 'error_recovery_time', message: 'Slow error recovery detected', action: 'Introduce immediate corrective examples after mistakes.', icon: '🔧' });
   }
   if (t.learning_fatigue_rate > 65) {
     insights.push({ id: `i-${++insightCounter}`, severity: 'warning', trait: 'learning_fatigue_rate', message: 'Learning fatigue accumulating fast', action: 'Schedule breaks every 20 minutes; vary task types.', icon: '⚡' });
-  }
-  if (t.distraction_vulnerability > 60) {
-    insights.push({ id: `i-${++insightCounter}`, severity: 'warning', trait: 'distraction_vulnerability', message: 'High distraction vulnerability', action: 'Enable full-screen mode; minimize UI elements.', icon: '🔕' });
   }
 
   return insights.slice(0, 5);

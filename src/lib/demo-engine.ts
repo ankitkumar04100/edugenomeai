@@ -47,34 +47,111 @@ export const PERSONAS: Record<string, PersonaBaseline> = {
   },
 };
 
-// 90-120s scenario: stable → confusion spike → insight → break → recovery → strong finish
-function getScenarioMultiplier(t: number, totalDuration: number = 100): { traitMult: number; confusionMult: number; fatigueMult: number } {
-  const phase = t / totalDuration;
-  if (phase < 0.2) return { traitMult: 1.0, confusionMult: 1.0, fatigueMult: 1.0 }; // stable
-  if (phase < 0.4) return { traitMult: 0.92, confusionMult: 1.8, fatigueMult: 1.3 }; // confusion spike
-  if (phase < 0.55) return { traitMult: 0.97, confusionMult: 1.2, fatigueMult: 1.1 }; // insight triggers
-  if (phase < 0.7) return { traitMult: 1.0, confusionMult: 0.8, fatigueMult: 0.85 }; // break
-  if (phase < 0.85) return { traitMult: 1.05, confusionMult: 0.7, fatigueMult: 0.9 }; // recovery bump
-  return { traitMult: 1.08, confusionMult: 0.65, fatigueMult: 0.8 }; // strong finish
+// Fixed deterministic timelines for each persona (10 checkpoints over 120s, indices 0..9)
+// Each trait gets a fixed delta pattern: [checkpoint0_delta, checkpoint1_delta, ...]
+// These deltas are added to the baseline to produce the final value at each checkpoint.
+
+const DETERMINISTIC_TRAIT_DELTAS: Record<string, number[]> = {
+  // 10 checkpoints: t=0,12,24,36,48,60,72,84,96,108 (loop every 120s)
+  // Pattern: stable → dip → spike → recovery → strong finish
+  pattern_recognition:         [0, 0, -3, -5, 2, 4, 6, 5, 3, 2],
+  concept_absorption:          [0, 1, -2, -4, -1, 3, 5, 4, 3, 2],
+  abstract_thinking:           [0, 0, -1, -3, 0, 2, 4, 3, 2, 1],
+  memory_retention:            [0, 1, 0, -2, -1, 1, 3, 4, 3, 2],
+  logical_deduction:           [0, 0, -2, -4, 1, 3, 5, 4, 3, 2],
+  error_recovery_time:         [0, -1, -4, -6, -2, 2, 5, 6, 4, 3],
+  focus_stability:             [0, 1, -2, -8, -4, 0, 4, 6, 5, 3],
+  eye_movement_smoothness:     [0, 0, -1, -5, -2, 1, 3, 4, 3, 2],
+  distraction_vulnerability:   [0, 0, 3, 8, 5, 2, -1, -3, -2, -1],
+  persistence_vs_avoidance:    [0, 1, 0, -4, -2, 1, 4, 5, 4, 3],
+  confidence_drift:            [0, 0, -3, -8, -5, -2, 2, 5, 4, 3],
+  task_switching_efficiency:   [0, 0, -1, -3, 0, 2, 3, 4, 3, 2],
+  visual_learning:             [0, 0, 2, 4, 4, 3, 2, 2, 2, 2],
+  auditory_learning:           [0, 0, 1, 1, 2, 2, 3, 2, 1, 1],
+  textual_affinity:            [0, 0, -1, -2, 0, 1, 2, 2, 1, 1],
+  interaction_engagement:      [0, 1, 0, -3, -1, 2, 4, 5, 4, 3],
+  repetition_comfort:          [0, 0, 1, 2, 1, 0, -1, 0, 1, 1],
+  long_short_form_pref:        [0, 0, 0, -2, -1, 0, 1, 2, 1, 0],
+  speed_accuracy_balance:      [0, 0, -2, -5, -2, 1, 3, 4, 3, 2],
+  difficulty_adaptation:       [0, 0, -1, -4, -1, 2, 4, 5, 4, 3],
+  confusion_sensitivity:       [0, 0, 3, 7, 4, 1, -2, -3, -2, -1],
+  learning_fatigue_rate:       [0, 1, 3, 5, 4, 2, 0, -1, 0, 0],
+  mistake_pattern_fingerprint: [0, 0, 2, 5, 3, 1, -1, -2, -1, 0],
+  cross_concept_linking:       [0, 0, -1, -3, 0, 2, 4, 5, 4, 3],
+};
+
+// Fixed confusion/fatigue timelines per persona
+const CONFUSION_TIMELINE: Record<string, number[]> = {
+  visual_thinker:  [28, 28, 30, 55, 55, 40, 34, 34, 34, 34],
+  text_analyst:    [18, 18, 20, 35, 35, 25, 20, 18, 18, 18],
+  fast_risk_taker: [42, 42, 48, 72, 72, 55, 45, 42, 42, 42],
+};
+
+const FATIGUE_TIMELINE: Record<string, number[]> = {
+  visual_thinker:  [38, 40, 42, 48, 52, 50, 46, 44, 42, 40],
+  text_analyst:    [32, 33, 35, 40, 44, 42, 38, 35, 33, 32],
+  fast_risk_taker: [48, 50, 54, 62, 68, 64, 58, 52, 50, 48],
+};
+
+// Session events at fixed timestamps
+export interface DemoEvent {
+  checkpoint: number; // 0-9
+  type: 'confusion_spike' | 'fatigue_warning' | 'mistake_cluster' | 'visual_hint_used' | 'improvement' | 'break_suggested';
+  label: string;
 }
 
-// Seeded deterministic random
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
+export const DEMO_EVENTS: Record<string, DemoEvent[]> = {
+  visual_thinker: [
+    { checkpoint: 3, type: 'confusion_spike', label: 'Confusion spike detected' },
+    { checkpoint: 4, type: 'mistake_cluster', label: 'Mistake cluster (visual errors)' },
+    { checkpoint: 5, type: 'visual_hint_used', label: 'Visual hint provided' },
+    { checkpoint: 6, type: 'improvement', label: 'Performance recovering' },
+    { checkpoint: 8, type: 'improvement', label: 'Strong finish' },
+  ],
+  text_analyst: [
+    { checkpoint: 3, type: 'confusion_spike', label: 'Mild confusion on complex text' },
+    { checkpoint: 4, type: 'fatigue_warning', label: 'Fatigue building slowly' },
+    { checkpoint: 6, type: 'improvement', label: 'Steady recovery with text hints' },
+    { checkpoint: 8, type: 'improvement', label: 'Consistent strong finish' },
+  ],
+  fast_risk_taker: [
+    { checkpoint: 2, type: 'mistake_cluster', label: 'Rapid errors from rushing' },
+    { checkpoint: 3, type: 'confusion_spike', label: 'High confusion from speed' },
+    { checkpoint: 4, type: 'fatigue_warning', label: 'Fatigue spike from intensity' },
+    { checkpoint: 5, type: 'break_suggested', label: 'Break recommended' },
+    { checkpoint: 7, type: 'improvement', label: 'Post-break improvement' },
+  ],
+};
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function interpolateTimeline(values: number[], tickInCycle: number, totalTicks: number): number {
+  const segments = values.length - 1;
+  const position = (tickInCycle / totalTicks) * segments;
+  const idx = Math.min(Math.floor(position), segments - 1);
+  const frac = position - idx;
+  return lerp(values[idx], values[idx + 1], frac);
 }
 
 export function generateDemoPayload(personaKey: string, tick: number): GenomePayload {
   const persona = PERSONAS[personaKey] || PERSONAS.visual_thinker;
-  const scenarioDuration = 100;
-  const cycleTick = tick % scenarioDuration;
-  const { traitMult, confusionMult, fatigueMult } = getScenarioMultiplier(cycleTick, scenarioDuration);
+  const key = personaKey in CONFUSION_TIMELINE ? personaKey : 'visual_thinker';
+
+  // 80 ticks per cycle at 1.5s = 120s
+  const totalTicks = 80;
+  const cycleTick = tick % totalTicks;
+
+  const confusionValues = CONFUSION_TIMELINE[key];
+  const fatigueValues = FATIGUE_TIMELINE[key];
 
   const traits: Record<string, number> = {};
-  TRAIT_DEFINITIONS.forEach((td, i) => {
+  TRAIT_DEFINITIONS.forEach((td) => {
     const base = persona.traits[td.key] || 60;
-    const noise = (seededRandom(tick * 100 + i) - 0.5) * 8;
-    traits[td.key] = Math.max(5, Math.min(98, base * traitMult + noise));
+    const deltas = DETERMINISTIC_TRAIT_DELTAS[td.key] || [0,0,0,0,0,0,0,0,0,0];
+    const delta = interpolateTimeline(deltas, cycleTick, totalTicks);
+    traits[td.key] = Math.max(5, Math.min(98, base + delta));
   });
 
   const categories: Record<GenomeCategory, number> = {
@@ -91,8 +168,8 @@ export function generateDemoPayload(personaKey: string, tick: number): GenomePay
 
   const overall = Object.values(categories).reduce((a, b) => a + b, 0) / 4;
 
-  const confNoise = (seededRandom(tick * 200 + 99) - 0.5) * 10;
-  const fatNoise = (seededRandom(tick * 300 + 77) - 0.5) * 8;
+  const ci = interpolateTimeline(confusionValues, cycleTick, totalTicks);
+  const fi = interpolateTimeline(fatigueValues, cycleTick, totalTicks);
 
   return {
     overall_genome_score: Math.round(overall * 10) / 10,
@@ -104,9 +181,40 @@ export function generateDemoPayload(personaKey: string, tick: number): GenomePay
     },
     traits: Object.fromEntries(Object.entries(traits).map(([k, v]) => [k, Math.round(v * 10) / 10])),
     indices: {
-      confusion_index: Math.max(0, Math.min(100, Math.round((persona.confusionBase * confusionMult + confNoise) * 10) / 10)),
-      fatigue_index: Math.max(0, Math.min(100, Math.round((persona.fatigueBase * fatigueMult + fatNoise) * 10) / 10)),
+      confusion_index: Math.max(0, Math.min(100, Math.round(ci * 10) / 10)),
+      fatigue_index: Math.max(0, Math.min(100, Math.round(fi * 10) / 10)),
     },
     timestamp: Date.now(),
   };
+}
+
+// Generate full deterministic replay timeline for a persona
+export function generateDemoReplayTimeline(personaKey: string): Array<{
+  t: number;
+  tick: number;
+  traits: Record<string, number>;
+  indices: { confusion_index: number; fatigue_index: number };
+  events: string[];
+}> {
+  const totalTicks = 80;
+  const events = DEMO_EVENTS[personaKey] || DEMO_EVENTS.visual_thinker;
+  const timeline: Array<any> = [];
+
+  for (let tick = 0; tick <= totalTicks; tick += 2) {
+    const payload = generateDemoPayload(personaKey, tick);
+    const checkpoint = Math.floor((tick / totalTicks) * 9.99);
+    const tickEvents = events
+      .filter(e => e.checkpoint === checkpoint)
+      .map(e => e.label);
+
+    timeline.push({
+      t: Math.round((tick / totalTicks) * 120),
+      tick,
+      traits: payload.traits,
+      indices: payload.indices,
+      events: tickEvents,
+    });
+  }
+
+  return timeline;
 }

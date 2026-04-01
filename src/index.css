@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,57 +6,60 @@
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 92%;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
-    --card: 222 41% 9%;
-    --card-foreground: 210 40% 92%;
+    --card: 0 0% 99%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 222 41% 9%;
-    --popover-foreground: 210 40% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 6%;
+    --primary: 215 90% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 30% 14%;
-    --secondary-foreground: 210 40% 85%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 46%;
 
-    --muted: 222 30% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 270 70% 60%;
-    --accent-foreground: 210 40% 95%;
+    --accent: 43 96% 56%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 217 91% 60%;
-    --radius: 0.75rem;
+    --success: 160 84% 39%;
+    --info: 217 91% 60%;
+    --warning: 43 96% 56%;
+    --danger: 0 84% 60%;
 
-    /* Genome Category Colors */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 215 90% 52%;
+    --radius: 1rem;
+
     --genome-cognitive: 217 91% 60%;
     --genome-behavioral: 270 70% 60%;
     --genome-learning: 160 72% 47%;
     --genome-performance: 25 95% 53%;
 
-    /* Glow effects */
-    --glow-cognitive: 0 0 20px hsl(217 91% 60% / 0.4);
-    --glow-behavioral: 0 0 20px hsl(270 70% 60% / 0.4);
-    --glow-learning: 0 0 20px hsl(160 72% 47% / 0.4);
-    --glow-performance: 0 0 20px hsl(25 95% 53% / 0.4);
-    --glow-confusion: 0 0 30px hsl(0 72% 51% / 0.5);
-    --glow-fatigue: 0 0 30px hsl(45 93% 47% / 0.5);
+    --glow-cognitive: 0 0 20px hsl(217 91% 60% / 0.25);
+    --glow-behavioral: 0 0 20px hsl(270 70% 60% / 0.25);
+    --glow-learning: 0 0 20px hsl(160 72% 47% / 0.25);
+    --glow-performance: 0 0 20px hsl(25 95% 53% / 0.25);
+    --glow-confusion: 0 0 24px hsl(0 84% 60% / 0.35);
+    --glow-fatigue: 0 0 24px hsl(43 96% 56% / 0.35);
 
-    --sidebar-background: 222 41% 7%;
-    --sidebar-foreground: 210 40% 85%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 14%;
-    --sidebar-accent-foreground: 210 40% 85%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 215 90% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 215 90% 52%;
 
     font-family: 'Inter', sans-serif;
   }
@@ -67,55 +70,58 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Source Sans 3', sans-serif;
+    @apply font-semibold tracking-tight;
   }
   code, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Inter', monospace;
   }
 }
 
 @layer utilities {
-  .genome-glow-cognitive {
-    box-shadow: var(--glow-cognitive);
-  }
-  .genome-glow-behavioral {
-    box-shadow: var(--glow-behavioral);
-  }
-  .genome-glow-learning {
-    box-shadow: var(--glow-learning);
-  }
-  .genome-glow-performance {
-    box-shadow: var(--glow-performance);
-  }
-  .genome-glow-confusion {
-    box-shadow: var(--glow-confusion);
-  }
-  .genome-glow-fatigue {
-    box-shadow: var(--glow-fatigue);
-  }
+  .genome-glow-cognitive { box-shadow: var(--glow-cognitive); }
+  .genome-glow-behavioral { box-shadow: var(--glow-behavioral); }
+  .genome-glow-learning { box-shadow: var(--glow-learning); }
+  .genome-glow-performance { box-shadow: var(--glow-performance); }
+  .genome-glow-confusion { box-shadow: var(--glow-confusion); }
+  .genome-glow-fatigue { box-shadow: var(--glow-fatigue); }
+
   .text-gradient-genome {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(var(--genome-cognitive)), hsl(var(--genome-behavioral)), hsl(var(--genome-learning)), hsl(var(--genome-performance)));
   }
+
   .bg-grid {
-    background-image: 
-      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.4) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.4) 1px, transparent 1px);
     background-size: 40px 40px;
+  }
+
+  .glass-surface {
+    @apply bg-white/70 backdrop-blur-sm border border-border shadow-sm;
+  }
+
+  .card-premium {
+    @apply bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md;
   }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
 
 .animate-pulse-glow {
