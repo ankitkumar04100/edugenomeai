@@ -13,27 +13,27 @@ const Auth: React.FC = () => {
           <span className="font-heading font-bold text-xl text-foreground">EduGenome AI</span>
         </Link>
 
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <div className="card-premium p-6 space-y-4">
           <h2 className="font-heading text-xl font-bold text-foreground text-center">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </h2>
 
           <div>
             <label className="text-xs text-muted-foreground font-heading block mb-1">Email</label>
-            <input type="email" className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground" placeholder="you@example.com" />
+            <input type="email" className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="you@example.com" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground font-heading block mb-1">Password</label>
-            <input type="password" className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground" placeholder="••••••••" />
+            <input type="password" className="w-full bg-white border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="••••••••" />
           </div>
 
           {isSignUp && (
             <div>
               <label className="text-xs text-muted-foreground font-heading block mb-1">Role</label>
-              <div className="flex gap-1 bg-secondary rounded-lg p-0.5">
+              <div className="flex gap-1 bg-secondary rounded-xl p-0.5">
                 {(['student', 'teacher', 'admin'] as const).map(r => (
                   <button key={r} onClick={() => setRole(r)}
-                    className={`flex-1 py-1.5 rounded-md text-xs font-heading font-medium capitalize transition-all ${role === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-heading font-medium capitalize transition-all ${role === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
                     {r}
                   </button>
                 ))}
@@ -43,13 +43,13 @@ const Auth: React.FC = () => {
 
           {isSignUp && (
             <label className="flex items-start gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" className="mt-0.5" />
+              <input type="checkbox" className="mt-0.5 accent-primary" />
               <span>I consent to eye-tracking data collection for learning analysis. No video is stored — only derived metrics.</span>
             </label>
           )}
 
           <Link to={role === 'teacher' ? '/teacher' : '/student'}
-            className="block w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-heading font-semibold text-center hover:opacity-90 transition-opacity">
+            className="block w-full py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-heading font-semibold text-center hover:opacity-90 transition-opacity">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </Link>
 

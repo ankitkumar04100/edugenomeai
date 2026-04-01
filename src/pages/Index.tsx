@@ -17,7 +17,7 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Nav */}
-      <nav className="fixed top-0 w-full z-50 border-b border-border bg-background/80 backdrop-blur-md">
+      <nav className="fixed top-0 w-full z-50 border-b border-border bg-white/80 backdrop-blur-md">
         <div className="container flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">🧬</span>
@@ -27,14 +27,14 @@ const Index: React.FC = () => {
             <Link to="/student" className="text-xs text-muted-foreground hover:text-foreground font-heading transition-colors">Student</Link>
             <Link to="/teacher" className="text-xs text-muted-foreground hover:text-foreground font-heading transition-colors">Teacher</Link>
             <Link to="/docs" className="text-xs text-muted-foreground hover:text-foreground font-heading transition-colors">Docs</Link>
-            <Link to="/auth" className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-heading font-semibold hover:opacity-90 transition-opacity">Sign In</Link>
+            <Link to="/auth" className="px-3 py-1.5 bg-primary text-primary-foreground rounded-xl text-xs font-heading font-semibold hover:opacity-90 transition-opacity">Sign In</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="pt-28 pb-20 relative">
-        <div className="absolute inset-0 bg-grid opacity-30" />
+        <div className="absolute inset-0 bg-grid opacity-20" />
         <div className="container px-4 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -48,13 +48,13 @@ const Index: React.FC = () => {
                 A Behavioral Intelligence Layer that decodes how each student learns. Eye Tracking + ML + Genome Visualization → a 24-trait Learning Genome, updated in real-time.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Link to="/student" className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-heading font-semibold hover:opacity-90 transition-opacity">
+                <Link to="/student" className="px-6 py-3 bg-primary text-primary-foreground rounded-2xl font-heading font-semibold hover:opacity-90 transition-opacity hover-lift">
                   🚀 Try Demo Mode
                 </Link>
-                <Link to="/student" className="px-6 py-3 border border-border text-foreground rounded-xl font-heading font-semibold hover:bg-secondary transition-colors">
+                <Link to="/student" className="px-6 py-3 border border-border text-foreground rounded-2xl font-heading font-semibold hover:bg-secondary transition-colors hover-lift">
                   Student Dashboard
                 </Link>
-                <Link to="/teacher" className="px-6 py-3 border border-border text-foreground rounded-xl font-heading font-semibold hover:bg-secondary transition-colors">
+                <Link to="/teacher" className="px-6 py-3 border border-border text-foreground rounded-2xl font-heading font-semibold hover:bg-secondary transition-colors hover-lift">
                   Teacher Dashboard
                 </Link>
               </div>
@@ -85,7 +85,7 @@ const Index: React.FC = () => {
       </section>
 
       {/* Solution */}
-      <section className="py-16 border-t border-border bg-card/30">
+      <section className="py-16 border-t border-border bg-secondary/30">
         <div className="container px-4 max-w-4xl">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
             <h2 className="font-heading text-2xl font-bold text-foreground mb-4">The Solution</h2>
@@ -100,9 +100,9 @@ const Index: React.FC = () => {
       <section className="py-16 border-t border-border">
         <div className="container px-4">
           <h2 className="font-heading text-2xl font-bold text-foreground mb-8 text-center">24 Learning Traits</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {(Object.keys(CATEGORY_COLORS) as GenomeCategory[]).map(cat => (
-              <div key={cat} className="space-y-1">
+              <div key={cat} className="card-premium p-4 space-y-1">
                 <div className="font-heading font-semibold text-sm mb-2" style={{ color: CATEGORY_COLORS[cat] }}>
                   {CATEGORY_LABELS[cat]}
                 </div>
@@ -118,7 +118,7 @@ const Index: React.FC = () => {
       </section>
 
       {/* How it Works */}
-      <section className="py-16 border-t border-border bg-card/30">
+      <section className="py-16 border-t border-border bg-secondary/30">
         <div className="container px-4 max-w-4xl">
           <h2 className="font-heading text-2xl font-bold text-foreground mb-8 text-center">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -129,7 +129,7 @@ const Index: React.FC = () => {
               { step: '4', title: 'Visualize', desc: 'Real-time Genome Wheel updates every 1–2s' },
               { step: '5', title: 'Recommend', desc: 'Actionable insights personalized per student' },
             ].map(s => (
-              <div key={s.step} className="text-center bg-card border border-border rounded-xl p-4">
+              <div key={s.step} className="text-center card-premium p-4">
                 <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-2 text-sm font-heading font-bold">{s.step}</div>
                 <div className="font-heading font-semibold text-sm text-foreground mb-1">{s.title}</div>
                 <div className="text-[11px] text-muted-foreground">{s.desc}</div>
@@ -150,7 +150,7 @@ const Index: React.FC = () => {
       </section>
 
       {/* What's Unique */}
-      <section className="py-16 border-t border-border bg-card/30">
+      <section className="py-16 border-t border-border bg-secondary/30">
         <div className="container px-4 max-w-4xl">
           <h2 className="font-heading text-2xl font-bold text-foreground mb-6 text-center">What Makes EduGenome Unique</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -160,7 +160,7 @@ const Index: React.FC = () => {
               { title: 'Actionable Insights', desc: 'Every update comes with personalized, evidence-based recommendations.' },
               { title: 'Not a chatbot', desc: 'A behavioral intelligence layer—not a chatbot, not a quiz app. A true learning genome.' },
             ].map((item, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-4">
+              <div key={i} className="card-premium p-4 hover-lift">
                 <div className="font-heading font-semibold text-sm text-foreground mb-1">{item.title}</div>
                 <div className="text-xs text-muted-foreground">{item.desc}</div>
               </div>

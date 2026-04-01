@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const Privacy: React.FC = () => (
   <div className="min-h-screen bg-background">
-    <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+    <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
       <div className="container flex items-center justify-between h-14 px-4">
         <Link to="/" className="flex items-center gap-2">
           <span className="text-lg">🧬</span>
@@ -21,6 +21,10 @@ const Privacy: React.FC = () => (
         <section>
           <h2 className="font-heading text-lg font-semibold text-foreground mb-2">What We Store</h2>
           <p>Only derived behavioral metrics (numerical values) are transmitted to our backend for analysis. These include: blink rate, fixation duration, gaze variance, response times, and interaction scores. No personally identifiable biometric data is stored.</p>
+        </section>
+        <section>
+          <h2 className="font-heading text-lg font-semibold text-foreground mb-2">Demo Mode</h2>
+          <p>Demo Mode uses deterministic, fixed data series that are identical on every run. No user data is generated, collected, or stored during demo sessions.</p>
         </section>
         <section>
           <h2 className="font-heading text-lg font-semibold text-foreground mb-2">Consent</h2>

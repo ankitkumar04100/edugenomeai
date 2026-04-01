@@ -10,6 +10,8 @@ import Auth from "./pages/Auth.tsx";
 import Admin from "./pages/Admin.tsx";
 import Privacy from "./pages/Privacy.tsx";
 import Docs from "./pages/Docs.tsx";
+import PracticePlayer from "./pages/PracticePlayer.tsx";
+import SessionReplay from "./pages/SessionReplay.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/practice" element={<PracticePlayer />} />
+          <Route path="/replay" element={<SessionReplay />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

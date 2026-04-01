@@ -27,7 +27,6 @@ const GenomeWheel: React.FC<GenomeWheelProps> = ({ data, size = 500, interactive
     svg.selectAll('g.arcs').remove();
     svg.selectAll('g.center-group').remove();
 
-    // Defs for glows
     let defs = svg.select<SVGDefsElement>('defs');
     if (defs.empty()) {
       defs = svg.append('defs');
@@ -63,17 +62,15 @@ const GenomeWheel: React.FC<GenomeWheelProps> = ({ data, size = 500, interactive
         .endAngle(endAngle)
         .cornerRadius(3);
 
-      // Background arc
       arcGroup.append('path')
         .attr('d', bgArc({}))
         .attr('fill', color)
-        .attr('opacity', 0.08);
+        .attr('opacity', 0.06);
 
-      // Value arc
       const path = arcGroup.append('path')
         .attr('d', arc({}))
         .attr('fill', color)
-        .attr('opacity', 0.7 + (value / 100) * 0.3)
+        .attr('opacity', 0.65 + (value / 100) * 0.35)
         .attr('stroke', color)
         .attr('stroke-width', 0.5)
         .style('filter', delta >= 5 ? 'url(#glow)' : 'none')
@@ -84,16 +81,15 @@ const GenomeWheel: React.FC<GenomeWheelProps> = ({ data, size = 500, interactive
         path.on('mouseenter', (event: MouseEvent) => {
           const rect = el.getBoundingClientRect();
           setTooltip({ x: event.clientX - rect.left, y: event.clientY - rect.top, trait, value });
-          path.transition().duration(150).attr('opacity', 1);
+          path.transition().duration(200).attr('opacity', 1);
         })
         .on('mouseleave', () => {
           setTooltip(null);
-          path.transition().duration(150).attr('opacity', 0.7 + (value / 100) * 0.3);
+          path.transition().duration(200).attr('opacity', 0.65 + (value / 100) * 0.35);
         })
         .on('click', () => onTraitClick?.(trait.key));
       }
 
-      // Pulse animation for significant changes
       if (delta >= 5) {
         const pulseArc = d3.arc<any>()
           .innerRadius(innerRadius)
@@ -107,7 +103,7 @@ const GenomeWheel: React.FC<GenomeWheelProps> = ({ data, size = 500, interactive
           .attr('fill', 'none')
           .attr('stroke', color)
           .attr('stroke-width', 2)
-          .attr('opacity', 0.8)
+          .attr('opacity', 0.7)
           .transition()
           .duration(800)
           .attr('opacity', 0)
@@ -115,67 +111,63 @@ const GenomeWheel: React.FC<GenomeWheelProps> = ({ data, size = 500, interactive
       }
     });
 
-    // Center circle
+    // Center circle - LIGHT theme
     const centerGroup = svg.append('g').attr('class', 'center-group').attr('transform', `translate(${cx},${cy})`);
-    
-    // Center background
+
     centerGroup.append('circle')
       .attr('r', innerRadius - 8)
-      .attr('fill', 'hsl(222, 41%, 9%)')
-      .attr('stroke', 'hsl(222, 30%, 22%)')
+      .attr('fill', '#FFFFFF')
+      .attr('stroke', '#E5E7EB')
       .attr('stroke-width', 1.5);
 
-    // Overall score
     centerGroup.append('text')
       .attr('text-anchor', 'middle')
       .attr('dy', '-8')
-      .attr('fill', 'hsl(210, 40%, 92%)')
+      .attr('fill', '#0F172A')
       .attr('font-size', size * 0.055)
-      .attr('font-family', '"Space Grotesk", sans-serif')
+      .attr('font-family', '"Source Sans 3", sans-serif')
       .attr('font-weight', '700')
       .text(Math.round(data.overall_genome_score));
 
     centerGroup.append('text')
       .attr('text-anchor', 'middle')
       .attr('dy', '14')
-      .attr('fill', 'hsl(215, 20%, 55%)')
+      .attr('fill', '#6B7280')
       .attr('font-size', size * 0.022)
       .attr('font-family', '"Inter", sans-serif')
       .text('GENOME SCORE');
 
-    // Confusion/Fatigue mini indicators
     const ci = data.indices.confusion_index;
     const fi = data.indices.fatigue_index;
-    
+
     centerGroup.append('circle').attr('cx', -20).attr('cy', 32).attr('r', 4)
-      .attr('fill', ci > 60 ? '#EF4444' : ci > 40 ? '#EAB308' : '#10B981');
+      .attr('fill', ci > 60 ? '#EF4444' : ci > 40 ? '#F59E0B' : '#10B981');
     centerGroup.append('text').attr('x', -12).attr('y', 35)
-      .attr('fill', 'hsl(215, 20%, 55%)').attr('font-size', 9).attr('font-family', '"JetBrains Mono"')
+      .attr('fill', '#6B7280').attr('font-size', 9).attr('font-family', '"Inter"')
       .text(`C:${Math.round(ci)}`);
 
     centerGroup.append('circle').attr('cx', 12).attr('cy', 32).attr('r', 4)
-      .attr('fill', fi > 65 ? '#EAB308' : fi > 40 ? '#F97316' : '#10B981');
+      .attr('fill', fi > 65 ? '#F59E0B' : fi > 40 ? '#F97316' : '#10B981');
     centerGroup.append('text').attr('x', 20).attr('y', 35)
-      .attr('fill', 'hsl(215, 20%, 55%)').attr('font-size', 9).attr('font-family', '"JetBrains Mono"')
+      .attr('fill', '#6B7280').attr('font-size', 9).attr('font-family', '"Inter"')
       .text(`F:${Math.round(fi)}`);
 
-    // Category labels around the outside
     const categories: GenomeCategory[] = ['cognitive', 'behavioral', 'learning_style', 'performance'];
     categories.forEach((cat, ci) => {
       const midAngle = (ci * 6 + 3) * angleStep - Math.PI / 2;
       const labelR = maxRadius + 18;
       const lx = Math.cos(midAngle) * labelR;
       const ly = Math.sin(midAngle) * labelR;
-      
+
       arcGroup.append('text')
         .attr('x', lx).attr('y', ly)
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'middle')
         .attr('fill', CATEGORY_COLORS[cat])
         .attr('font-size', size * 0.02)
-        .attr('font-family', '"Space Grotesk", sans-serif')
+        .attr('font-family', '"Source Sans 3", sans-serif')
         .attr('font-weight', '600')
-        .attr('opacity', 0.8)
+        .attr('opacity', 0.85)
         .text(CATEGORY_LABELS[cat]);
     });
 
@@ -184,13 +176,13 @@ const GenomeWheel: React.FC<GenomeWheelProps> = ({ data, size = 500, interactive
 
   return (
     <div className="relative inline-block">
-      <svg ref={svgRef} width={size} height={size} viewBox={`0 0 ${size} ${size}`} />
+      <svg ref={svgRef} width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Genome Wheel visualization showing 24 learning traits" />
       {tooltip && (
         <div
-          className="absolute z-50 pointer-events-none bg-card border border-border rounded-lg p-3 shadow-xl max-w-[220px]"
+          className="absolute z-50 pointer-events-none bg-white border border-border rounded-2xl p-3 shadow-lg max-w-[220px]"
           style={{ left: tooltip.x + 12, top: tooltip.y - 10 }}
         >
-          <div className="text-xs font-mono mb-1" style={{ color: CATEGORY_COLORS[tooltip.trait.category] }}>
+          <div className="text-xs font-heading mb-1" style={{ color: CATEGORY_COLORS[tooltip.trait.category] }}>
             {CATEGORY_LABELS[tooltip.trait.category]}
           </div>
           <div className="font-heading font-semibold text-sm text-foreground">{tooltip.trait.name}</div>
