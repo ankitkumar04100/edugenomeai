@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import GenomeWheel from '@/components/GenomeWheel';
 import SessionControls from '@/components/SessionControls';
 import ConfusionFatigueBadges from '@/components/ConfusionFatigueBadges';
