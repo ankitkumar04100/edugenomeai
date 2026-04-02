@@ -208,6 +208,11 @@ const StudentDashboard: React.FC = () => {
           <Link to={`/replay?persona=${persona}`} className="px-4 py-2 bg-primary/10 border border-primary/30 text-foreground rounded-2xl text-xs font-heading font-semibold hover:bg-primary/20 transition-colors">
             🔄 Session Replay
           </Link>
+          {sessionId && (
+            <button onClick={handleExportPDF} className="px-4 py-2 bg-success/10 border border-success/30 text-foreground rounded-2xl text-xs font-heading font-semibold hover:bg-success/20 transition-colors">
+              📄 Export PDF
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
