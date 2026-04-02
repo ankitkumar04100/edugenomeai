@@ -15,6 +15,7 @@ import { traitEngine, TraitEngineMode } from '@/lib/trait-engine';
 import { eyeTracker, EyeMetrics } from '@/lib/eye-tracker';
 import { useAuth } from '@/hooks/useAuth';
 import { startSession, endSession, saveGenomeSnapshot, saveSessionEvent, getUserSessions, SessionRecord } from '@/lib/session-service';
+import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
