@@ -144,6 +144,26 @@ const StudentDashboard: React.FC = () => {
     setEyeMetrics(null);
   }, [mode, persona, tick, sessionId, genome]);
 
+  const handleExportPDF = useCallback(async () => {
+    if (!sessionId) { toast.error('No active session to export'); return; }
+    toast.loading('Generating report...');
+    try {
+      const { data, error } = await supabase.functions.invoke('export-pdf', {
+        body: { session_id: sessionId },
+      });
+      if (error) throw error;
+      // Open HTML report in new tab
+      const blob = new Blob([data.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      toast.dismiss();
+      toast.success('Report generated');
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.message || 'Export failed');
+    }
+  }, [sessionId]);
+
   return (
     <div className="min-h-screen bg-background">
       <ConsentModal open={showConsent} onAccept={handleConsentAccept} onDecline={() => setShowConsent(false)} />
