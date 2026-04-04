@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import GenomeWheel from '@/components/GenomeWheel';
 import ConfusionFatigueBadges from '@/components/ConfusionFatigueBadges';
+import CohortAnalytics from '@/components/CohortAnalytics';
 import { generateDemoPayload, PERSONAS } from '@/lib/demo-engine';
 import { GenomePayload, CATEGORY_COLORS, CATEGORY_LABELS, GenomeCategory } from '@/lib/genome-types';
 import { Link } from 'react-router-dom';
@@ -22,7 +23,7 @@ const TeacherDashboard: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [studentData, setStudentData] = useState<Record<string, GenomePayload>>({});
-  const [activeView, setActiveView] = useState<'overview' | 'classes'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'classes' | 'analytics'>('overview');
   const [classes, setClasses] = useState<Array<{ id: string; name: string; invite_code: string }>>([]);
   const [newClassName, setNewClassName] = useState('');
   const [showCreateClass, setShowCreateClass] = useState(false);
@@ -40,7 +41,6 @@ const TeacherDashboard: React.FC = () => {
     setStudentData(data);
   }, [tick]);
 
-  // Load real classes if logged in
   useEffect(() => {
     if (user) {
       supabase.from('classes').select('id, name, invite_code').eq('teacher_id', user.id)
@@ -66,13 +66,11 @@ const TeacherDashboard: React.FC = () => {
     return g && (g.indices.confusion_index > 50 || g.indices.fatigue_index > 50);
   });
 
-  // Class-level analytics
   const allGenomes = Object.values(studentData);
   const classAvgConfusion = allGenomes.length > 0 ? allGenomes.reduce((a, g) => a + g.indices.confusion_index, 0) / allGenomes.length : 0;
   const classAvgFatigue = allGenomes.length > 0 ? allGenomes.reduce((a, g) => a + g.indices.fatigue_index, 0) / allGenomes.length : 0;
   const classAvgScore = allGenomes.length > 0 ? allGenomes.reduce((a, g) => a + g.overall_genome_score, 0) / allGenomes.length : 0;
 
-  // Find weakest traits across class
   const traitSums: Record<string, number> = {};
   allGenomes.forEach(g => {
     Object.entries(g.traits).forEach(([k, v]) => { traitSums[k] = (traitSums[k] || 0) + (v as number); });
@@ -92,7 +90,7 @@ const TeacherDashboard: React.FC = () => {
           </Link>
           <div className="flex items-center gap-3">
             <div className="flex gap-1 bg-secondary rounded-xl p-0.5">
-              {(['overview', 'classes'] as const).map(v => (
+              {(['overview', 'analytics', 'classes'] as const).map(v => (
                 <button key={v} onClick={() => setActiveView(v)}
                   className={`px-3 py-1 rounded-lg text-xs font-heading font-medium capitalize transition-all ${activeView === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
                   {v}
@@ -105,6 +103,13 @@ const TeacherDashboard: React.FC = () => {
       </header>
 
       <div className="container px-4 py-6">
+        {activeView === 'analytics' && (
+          <div className="max-w-3xl space-y-4">
+            <h1 className="font-heading text-2xl font-bold text-foreground">📊 Cohort Analytics</h1>
+            <CohortAnalytics />
+          </div>
+        )}
+
         {activeView === 'classes' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -145,7 +150,6 @@ const TeacherDashboard: React.FC = () => {
           <>
             <h1 className="font-heading text-2xl font-bold text-foreground mb-6">Class Overview</h1>
 
-            {/* Class-level analytics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <div className="card-premium p-4 text-center">
                 <div className="text-2xl font-heading font-bold text-foreground">{Math.round(classAvgScore)}</div>
