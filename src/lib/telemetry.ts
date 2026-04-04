@@ -1,7 +1,7 @@
 // Telemetry & Logging module
 export interface TelemetryEvent {
   timestamp: number;
-  type: 'session_start' | 'session_end' | 'confusion_spike' | 'fatigue_alert' | 'hint_used' | 'trait_delta' | 'export' | 'ws_connect' | 'ws_disconnect' | 'mistake_cluster';
+  type: string;
   data: Record<string, any>;
 }
 
