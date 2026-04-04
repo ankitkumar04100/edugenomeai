@@ -8,7 +8,7 @@ export interface TelemetryEvent {
 class TelemetryLogger {
   private events: TelemetryEvent[] = [];
 
-  log(type: TelemetryEvent['type'], data: Record<string, any> = {}) {
+  log(type: string, data: Record<string, any> = {}) {
     const event: TelemetryEvent = { timestamp: Date.now(), type, data };
     this.events.push(event);
     if (this.events.length > 500) this.events = this.events.slice(-250);
