@@ -81,6 +81,14 @@ const PracticePlayer: React.FC = () => {
     }
   }, [currentQuestionIdx, currentDifficulty]);
 
+  const handleVoiceEvent = useCallback((event: string, payload?: Record<string, any>) => {
+    telemetry.log(event, payload || {});
+  }, []);
+
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    setTextAnswer(transcript);
+  }, []);
+
   if (!currentQuestion && !sessionComplete) {
     const nextIdx = DIFFICULTY_ORDER.indexOf(currentDifficulty) + 1;
     if (nextIdx < DIFFICULTY_ORDER.length) {
@@ -97,14 +105,6 @@ const PracticePlayer: React.FC = () => {
     setHintsUsed(prev => [...prev, hintType]);
     telemetry.log('hint_used', { questionId: currentQuestion?.id, hintType });
   };
-
-  const handleVoiceEvent = useCallback((event: string, payload?: Record<string, any>) => {
-    telemetry.log(event, payload || {});
-  }, []);
-
-  const handleVoiceTranscript = useCallback((transcript: string) => {
-    setTextAnswer(transcript);
-  }, []);
 
   const handleSubmit = () => {
     if (!currentQuestion) return;
