@@ -8,11 +8,15 @@ import AlertBanner from '@/components/AlertBanner';
 import ConsentModal from '@/components/ConsentModal';
 import PrivacyStatus from '@/components/PrivacyStatus';
 import SystemStatus from '@/components/SystemStatus';
+import DecisionTimeline from '@/components/DecisionTimeline';
+import TraitEvolution from '@/components/TraitEvolution';
+import SessionComparison from '@/components/SessionComparison';
 import { generateInsights } from '@/lib/insight-engine';
 import { GenomePayload, GenomeCategory, CATEGORY_COLORS, CATEGORY_LABELS, Insight } from '@/lib/genome-types';
 import { telemetry } from '@/lib/telemetry';
 import { traitEngine, TraitEngineMode } from '@/lib/trait-engine';
 import { eyeTracker, EyeMetrics } from '@/lib/eye-tracker';
+import { orchestrator } from '@/lib/adaptive-engine';
 import { useAuth } from '@/hooks/useAuth';
 import { startSession, endSession, saveGenomeSnapshot, saveSessionEvent, getUserSessions, SessionRecord } from '@/lib/session-service';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +40,7 @@ const StudentDashboard: React.FC = () => {
   const [tick, setTick] = useState(0);
   const [genome, setGenome] = useState<GenomePayload>(initialPayload);
   const [insights, setInsights] = useState<Insight[]>([]);
-  const [activeTab, setActiveTab] = useState<'genome' | 'sessions' | 'insights'>('genome');
+  const [activeTab, setActiveTab] = useState<'genome' | 'sessions' | 'insights' | 'evolution'>('genome');
   const [categoryFilter, setCategoryFilter] = useState<GenomeCategory | null>(null);
   const [showConsent, setShowConsent] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
@@ -45,9 +49,11 @@ const StudentDashboard: React.FC = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [lastUpdateMs, setLastUpdateMs] = useState(0);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareA, setCompareA] = useState<SessionRecord | null>(null);
+  const [compareB, setCompareB] = useState<SessionRecord | null>(null);
   const engineMode = mode === 'demo' ? 'demo' : 'rule-based';
 
-  // Load session history
   useEffect(() => {
     if (user) {
       getUserSessions(user.id).then(setSessions);
@@ -72,9 +78,25 @@ const StudentDashboard: React.FC = () => {
     setInsights(generateInsights(payload));
     setLastUpdateMs(Math.round(performance.now() - start));
 
-    // Persist snapshot if logged in
+    // Run orchestrator
+    if (mode === 'demo') {
+      orchestrator.inferDemo(tick, persona);
+    } else {
+      orchestrator.inferLive(tick, payload);
+    }
+
     if (sessionId) {
       saveGenomeSnapshot(sessionId, payload);
+      // Save orchestrator events
+      const lastDecision = orchestrator.getLastDecision();
+      if (lastDecision && lastDecision.tick === tick) {
+        saveSessionEvent(sessionId, 'orchestrator_action', {
+          action: lastDecision.action,
+          reason: lastDecision.reason,
+          interventionType: lastDecision.interventionType,
+          expectedEffect: lastDecision.expectedEffect,
+        });
+      }
       if (payload.indices.confusion_index > 70) {
         saveSessionEvent(sessionId, 'confusion_spike', { value: payload.indices.confusion_index });
       }
@@ -82,7 +104,7 @@ const StudentDashboard: React.FC = () => {
         saveSessionEvent(sessionId, 'fatigue_alert', { value: payload.indices.fatigue_index });
       }
     }
-  }, [tick, persona, eyeMetrics, sessionId]);
+  }, [tick, persona, eyeMetrics, sessionId, mode]);
 
   const handleModeChange = useCallback((newMode: 'live' | 'demo') => {
     if (newMode === 'live' && !profile?.eye_tracking_consent) {
@@ -101,17 +123,14 @@ const StudentDashboard: React.FC = () => {
 
   const handleStart = useCallback(async () => {
     traitEngine.reset();
+    orchestrator.reset();
     setIsRunning(true);
     setTick(0);
     telemetry.log('session_start', { mode, persona });
-
-    // Start DB session if logged in
     if (user) {
       const sid = await startSession(user.id, mode, mode === 'demo' ? persona : undefined);
       setSessionId(sid);
     }
-
-    // Start eye tracking in live mode
     if (mode === 'live') {
       const ok = await eyeTracker.init((m) => {
         setEyeMetrics(m);
@@ -129,12 +148,10 @@ const StudentDashboard: React.FC = () => {
 
   const handleEnd = useCallback(async () => {
     telemetry.log('session_end', { mode, persona, ticks: tick });
-    
     if (sessionId) {
       await endSession(sessionId, genome);
       toast.success('Session saved');
     }
-
     eyeTracker.stop();
     setCameraOn(false);
     setIsRunning(false);
@@ -153,7 +170,6 @@ const StudentDashboard: React.FC = () => {
         body: { session_id: sessionId },
       });
       if (error) throw error;
-      // Open HTML report in new tab
       const blob = new Blob([data.html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
@@ -164,6 +180,35 @@ const StudentDashboard: React.FC = () => {
       toast.error(err.message || 'Export failed');
     }
   }, [sessionId]);
+
+  const handleSelectForCompare = (s: SessionRecord) => {
+    if (!compareA) {
+      setCompareA(s);
+    } else if (!compareB) {
+      setCompareB(s);
+    }
+  };
+
+  const decisions = orchestrator.getDecisions();
+
+  // Compare view
+  if (compareA && compareB) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+          <div className="container flex items-center justify-between h-14 px-4">
+            <Link to="/" className="flex items-center gap-2">
+              <span className="text-lg">🧬</span>
+              <span className="font-heading font-bold text-foreground">EduGenome AI</span>
+            </Link>
+          </div>
+        </header>
+        <div className="container px-4 py-6 max-w-2xl">
+          <SessionComparison sessionA={compareA} sessionB={compareB} onClose={() => { setCompareA(null); setCompareB(null); setCompareMode(false); }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -189,7 +234,6 @@ const StudentDashboard: React.FC = () => {
       <div className="container px-4 py-6 space-y-4">
         <AlertBanner indices={genome.indices} />
 
-        {/* System + Privacy Status */}
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <SystemStatus mode={mode} isRunning={isRunning} wsConnected={false} lastUpdateMs={lastUpdateMs} traitEngineMode={engineMode} />
           <PrivacyStatus cameraOn={cameraOn} metricsStreaming={isRunning} faceConfidence={faceConfidence} />
@@ -201,7 +245,7 @@ const StudentDashboard: React.FC = () => {
           onModeChange={handleModeChange} onPersonaChange={setPersona}
         />
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link to="/practice" className="px-4 py-2 bg-accent/10 border border-accent/30 text-foreground rounded-2xl text-xs font-heading font-semibold hover:bg-accent/20 transition-colors">
             📝 Practice Player
           </Link>
@@ -217,11 +261,11 @@ const StudentDashboard: React.FC = () => {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-secondary rounded-2xl p-1 w-fit">
-          {(['genome', 'sessions', 'insights'] as const).map(tab => (
+          {(['genome', 'sessions', 'insights', 'evolution'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-4 py-1.5 rounded-xl text-xs font-heading font-medium capitalize transition-all ${activeTab === tab ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               aria-selected={activeTab === tab} role="tab">
-              {tab}
+              {tab === 'evolution' ? '📈 Evolution' : tab}
             </button>
           ))}
         </div>
@@ -257,6 +301,15 @@ const StudentDashboard: React.FC = () => {
               </div>
               <div className="space-y-4">
                 <InsightsPanel insights={insights} />
+
+                {/* Decision Timeline */}
+                {decisions.length > 0 && (
+                  <div className="card-premium p-4">
+                    <h3 className="font-heading font-semibold text-sm text-foreground mb-2">🤖 Adaptive Feed</h3>
+                    <DecisionTimeline decisions={decisions} compact />
+                  </div>
+                )}
+
                 <div className="card-premium p-4 space-y-3">
                   <h3 className="font-heading font-semibold text-sm text-foreground">📊 Session Stats</h3>
                   <div className="grid grid-cols-2 gap-2">
@@ -276,6 +329,13 @@ const StudentDashboard: React.FC = () => {
           </>
         )}
 
+        {activeTab === 'evolution' && (
+          <div className="max-w-3xl">
+            <h2 className="font-heading text-lg font-bold text-foreground mb-4">📈 Trait Evolution</h2>
+            <TraitEvolution />
+          </div>
+        )}
+
         {activeTab === 'insights' && (
           <div className="max-w-2xl">
             <InsightsPanel insights={insights} />
@@ -290,10 +350,28 @@ const StudentDashboard: React.FC = () => {
 
         {activeTab === 'sessions' && (
           <div className="space-y-4">
+            {sessions.length >= 2 && (
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setCompareMode(!compareMode); setCompareA(null); setCompareB(null); }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-heading font-semibold border transition-all ${
+                    compareMode ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                  }`}>
+                  📊 {compareMode ? 'Cancel Compare' : 'Compare Sessions'}
+                </button>
+                {compareMode && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {!compareA ? 'Select session A' : 'Select session B'}
+                  </span>
+                )}
+              </div>
+            )}
+
             {sessions.length > 0 ? (
               <div className="space-y-2">
                 {sessions.map(s => (
-                  <div key={s.id} className="card-premium p-4 flex items-center justify-between">
+                  <div key={s.id} className={`card-premium p-4 flex items-center justify-between ${
+                    compareMode && (compareA?.id === s.id || compareB?.id === s.id) ? 'border-primary/50 bg-primary/5' : ''
+                  }`}>
                     <div>
                       <div className="text-sm font-heading font-semibold text-foreground">
                         {new Date(s.started_at).toLocaleDateString()} — {s.mode === 'demo' ? `Demo (${s.persona || 'N/A'})` : 'Live'}
@@ -304,9 +382,18 @@ const StudentDashboard: React.FC = () => {
                         Fatigue: {s.avg_fatigue ? Math.round(s.avg_fatigue) : '—'}
                       </div>
                     </div>
-                    <Link to={`/replay?session=${s.id}`} className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-heading font-semibold hover:bg-primary/20">
-                      Replay →
-                    </Link>
+                    <div className="flex gap-2">
+                      {compareMode ? (
+                        <button onClick={() => handleSelectForCompare(s)}
+                          className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-heading font-semibold hover:bg-primary/20">
+                          {compareA?.id === s.id ? '✓ A' : compareB?.id === s.id ? '✓ B' : 'Select'}
+                        </button>
+                      ) : (
+                        <Link to={`/replay?session=${s.id}`} className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-heading font-semibold hover:bg-primary/20">
+                          Replay →
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
