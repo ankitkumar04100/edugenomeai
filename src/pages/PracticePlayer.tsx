@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { QUIZ_QUESTIONS, QuizQuestion, Difficulty, HintType } from '@/lib/quiz-data';
 import { classifyMistake, MistakeEvent, computeFingerprint } from '@/lib/mistake-engine';
 import { telemetry } from '@/lib/telemetry';
-import { orchestrator, type OrchestratorDecision } from '@/lib/adaptive-engine';
+import { orchestrator } from '@/lib/adaptive-engine';
 import { HeatmapCollector, type HeatmapSnapshot } from '@/lib/heatmap-engine';
 import { TTSHintButton, DictationButton } from '@/components/VoiceControls';
-import DecisionTimeline from '@/components/DecisionTimeline';
 import AttentionHeatmap from '@/components/AttentionHeatmap';
 import MicrobreakScreen from '@/components/MicrobreakScreen';
+import AIChatBot from '@/components/AIChatBot';
 
 interface QuestionResult {
   questionId: string;
@@ -54,7 +54,6 @@ const PracticePlayer: React.FC = () => {
     orchestrator.reset();
     const interval = setInterval(() => {
       tickRef.current++;
-      // Demo orchestrator — uses deterministic decisions
       const decision = orchestrator.inferDemo(tickRef.current, 'visual_thinker');
       if (decision) {
         setUiMode(decision.action.ui_mode);
@@ -75,7 +74,6 @@ const PracticePlayer: React.FC = () => {
     setHintsUsed([]);
     setShownHints(new Set());
     setCorrections(0);
-    // Generate demo heatmap for previous question
     if (currentQuestionIdx > 0) {
       setLastHeatmap(HeatmapCollector.generateDemoHeatmap('visual_thinker', currentQuestionIdx - 1));
     }
@@ -157,7 +155,6 @@ const PracticePlayer: React.FC = () => {
   const fingerprint = computeFingerprint(mistakes);
   const totalCorrect = results.filter(r => r.correct).length;
   const avgResponseTime = results.length > 0 ? results.reduce((a, r) => a + r.responseTime, 0) / results.length : 0;
-  const decisions = orchestrator.getDecisions();
 
   if (showMicrobreak) {
     return (
@@ -197,14 +194,6 @@ const PracticePlayer: React.FC = () => {
             </div>
           </div>
 
-          {/* Adaptive decisions summary */}
-          {decisions.length > 0 && (
-            <div className="card-premium p-5">
-              <h3 className="font-heading font-semibold text-foreground mb-3">🤖 Adaptive Decisions ({decisions.length})</h3>
-              <DecisionTimeline decisions={decisions} compact />
-            </div>
-          )}
-
           {mistakes.length > 0 && (
             <div className="card-premium p-5">
               <h3 className="font-heading font-semibold text-foreground mb-3">Mistake Fingerprint</h3>
@@ -223,6 +212,7 @@ const PracticePlayer: React.FC = () => {
             Back to Dashboard
           </Link>
         </div>
+        <AIChatBot context="Student just completed a practice session" />
       </div>
     );
   }
@@ -270,130 +260,119 @@ const PracticePlayer: React.FC = () => {
           </div>
         )}
 
-        <div className={`grid gap-6 ${isMinimal ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
-          {/* Question card */}
-          <div className={`${isMinimal ? '' : 'lg:col-span-2'} card-premium p-6 space-y-4`}>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className={`px-2 py-0.5 rounded-lg border capitalize ${DIFFICULTY_COLORS[currentQuestion.difficulty]}`}>
-                {currentQuestion.difficulty}
-              </span>
-              <span>•</span>
-              <span>{currentQuestion.topic}</span>
+        {/* Question card - full width now */}
+        <div className="card-premium p-6 space-y-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className={`px-2 py-0.5 rounded-lg border capitalize ${DIFFICULTY_COLORS[currentQuestion.difficulty]}`}>
+              {currentQuestion.difficulty}
+            </span>
+            <span>•</span>
+            <span>{currentQuestion.topic}</span>
+          </div>
+
+          {isStepByStep && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-xs text-foreground">
+              📋 <span className="font-heading font-semibold">Step-by-Step Mode Active</span> — Read the question carefully, check hints, then answer.
             </div>
+          )}
 
-            {isStepByStep && (
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-xs text-foreground">
-                📋 <span className="font-heading font-semibold">Step-by-Step Mode Active</span> — Read the question carefully, check hints, then answer.
-              </div>
-            )}
+          <h2 className="font-heading text-lg font-semibold text-foreground">{currentQuestion.question}</h2>
 
-            <h2 className="font-heading text-lg font-semibold text-foreground">{currentQuestion.question}</h2>
-
-            {/* Answer input */}
-            {currentQuestion.type === 'mcq' && currentQuestion.options && (
-              <div className="space-y-2">
-                {currentQuestion.options.map((opt) => (
-                  <button key={opt} onClick={() => !showResult && setSelectedAnswer(opt)} disabled={showResult}
-                    className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-body transition-all ${
-                      selectedAnswer === opt
-                        ? showResult
-                          ? isCorrect ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'
-                          : 'bg-primary/10 border-primary/40 text-foreground'
-                        : showResult && opt === currentQuestion.correctAnswer
-                          ? 'bg-green-50 border-green-300 text-green-800'
-                          : 'bg-white border-border text-foreground hover:bg-secondary/50'
-                    }`}>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {currentQuestion.type === 'text_input' && (
-              <div className="space-y-2">
-                <input type="text" value={textAnswer} onChange={e => !showResult && setTextAnswer(e.target.value)}
-                  placeholder="Type your answer..." disabled={showResult}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                <DictationButton onTranscript={handleVoiceTranscript} onEvent={handleVoiceEvent} />
-              </div>
-            )}
-
-            {/* Hints */}
+          {/* Answer input */}
+          {currentQuestion.type === 'mcq' && currentQuestion.options && (
             <div className="space-y-2">
-              <div className="text-xs text-muted-foreground font-heading">Hints:</div>
-              <div className="flex flex-wrap gap-2">
-                {currentQuestion.hints.map((hint, i) => (
-                  <div key={i} className="flex items-center gap-1">
-                    <button onClick={() => handleUseHint(i, hint.type)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-heading border transition-all ${
-                        shownHints.has(i)
-                          ? 'bg-accent/20 border-accent/40 text-accent-foreground'
-                          : 'bg-secondary border-border text-muted-foreground hover:text-foreground hover:bg-secondary/80'
-                      }`}>
-                      {hint.type === 'visual' ? '🖼️' : hint.type === 'audio' ? '🔊' : '📝'} {hint.type}
-                    </button>
-                    {shownHints.has(i) && hint.type === 'audio' && (
-                      <TTSHintButton text={hint.content} questionId={currentQuestion.id} onEvent={handleVoiceEvent} />
-                    )}
-                  </div>
-                ))}
-              </div>
-              {[...shownHints].map(idx => (
-                <div key={idx} className="text-xs text-foreground bg-accent/10 rounded-xl px-3 py-2 border border-accent/20">
-                  {currentQuestion.hints[idx].content}
+              {currentQuestion.options.map((opt) => (
+                <button key={opt} onClick={() => !showResult && setSelectedAnswer(opt)} disabled={showResult}
+                  className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-body transition-all ${
+                    selectedAnswer === opt
+                      ? showResult
+                        ? isCorrect ? 'bg-green-50 border-green-300 text-green-800' : 'bg-red-50 border-red-300 text-red-800'
+                        : 'bg-primary/10 border-primary/40 text-foreground'
+                      : showResult && opt === currentQuestion.correctAnswer
+                        ? 'bg-green-50 border-green-300 text-green-800'
+                        : 'bg-white border-border text-foreground hover:bg-secondary/50'
+                  }`}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {currentQuestion.type === 'text_input' && (
+            <div className="space-y-2">
+              <input type="text" value={textAnswer} onChange={e => !showResult && setTextAnswer(e.target.value)}
+                placeholder="Type your answer..." disabled={showResult}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <DictationButton onTranscript={handleVoiceTranscript} onEvent={handleVoiceEvent} />
+            </div>
+          )}
+
+          {/* Hints */}
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground font-heading">Hints:</div>
+            <div className="flex flex-wrap gap-2">
+              {currentQuestion.hints.map((hint, i) => (
+                <div key={i} className="flex items-center gap-1">
+                  <button onClick={() => handleUseHint(i, hint.type)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-heading border transition-all ${
+                      shownHints.has(i)
+                        ? 'bg-accent/20 border-accent/40 text-accent-foreground'
+                        : 'bg-secondary border-border text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                    }`}>
+                    {hint.type === 'visual' ? '🖼️' : hint.type === 'audio' ? '🔊' : '📝'} {hint.type}
+                  </button>
+                  {shownHints.has(i) && hint.type === 'audio' && (
+                    <TTSHintButton text={hint.content} questionId={currentQuestion.id} onEvent={handleVoiceEvent} />
+                  )}
                 </div>
               ))}
             </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              {!showResult ? (
-                <button onClick={handleSubmit} disabled={!selectedAnswer && !textAnswer.trim()}
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-heading font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40">
-                  Submit Answer
-                </button>
-              ) : (
-                <button onClick={handleNext}
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-heading font-semibold text-sm hover:opacity-90 transition-opacity">
-                  Next Question →
-                </button>
-              )}
-            </div>
-
-            {showResult && (
-              <div className={`text-sm font-heading font-semibold px-4 py-2 rounded-xl ${isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                {isCorrect ? '✅ Correct!' : `❌ The correct answer is: ${currentQuestion.correctAnswer}`}
+            {[...shownHints].map(idx => (
+              <div key={idx} className="text-xs text-foreground bg-accent/10 rounded-xl px-3 py-2 border border-accent/20">
+                {currentQuestion.hints[idx].content}
               </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
+            {!showResult ? (
+              <button onClick={handleSubmit} disabled={!selectedAnswer && !textAnswer.trim()}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-heading font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40">
+                Submit Answer
+              </button>
+            ) : (
+              <button onClick={handleNext}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-heading font-semibold text-sm hover:opacity-90 transition-opacity">
+                Next Question →
+              </button>
             )}
           </div>
 
-          {/* Right panel: Decision timeline + Heatmap */}
-          {!isMinimal && (
-            <div className="space-y-4">
-              <div className="card-premium p-4">
-                <h3 className="font-heading font-semibold text-sm text-foreground mb-2">🤖 Adaptive Decisions</h3>
-                <DecisionTimeline decisions={decisions} compact />
-              </div>
-
-              {lastHeatmap && (
-                <div className="card-premium p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-heading font-semibold text-sm text-foreground">🔥 Attention Heatmap</h3>
-                    <button onClick={() => setShowHeatmap(!showHeatmap)} className="text-[10px] text-primary hover:underline font-heading">
-                      {showHeatmap ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                  {showHeatmap && (
-                    <AttentionHeatmap
-                      snapshot={lastHeatmap}
-                      summary={HeatmapCollector.getDemoSummary('visual_thinker')}
-                    />
-                  )}
-                </div>
-              )}
+          {showResult && (
+            <div className={`text-sm font-heading font-semibold px-4 py-2 rounded-xl ${isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              {isCorrect ? '✅ Correct!' : `❌ The correct answer is: ${currentQuestion.correctAnswer}`}
             </div>
           )}
         </div>
+
+        {/* Heatmap below question */}
+        {lastHeatmap && (
+          <div className="card-premium p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-heading font-semibold text-sm text-foreground">🔥 Attention Heatmap</h3>
+              <button onClick={() => setShowHeatmap(!showHeatmap)} className="text-[10px] text-primary hover:underline font-heading">
+                {showHeatmap ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {showHeatmap && (
+              <AttentionHeatmap
+                snapshot={lastHeatmap}
+                summary={HeatmapCollector.getDemoSummary('visual_thinker')}
+              />
+            )}
+          </div>
+        )}
 
         {/* Session stats */}
         <div className="flex gap-4 text-xs text-muted-foreground">
@@ -401,9 +380,10 @@ const PracticePlayer: React.FC = () => {
           <span>❌ {results.length - totalCorrect} wrong</span>
           <span>💡 {results.reduce((a, r) => a + r.hintsUsed.length, 0)} hints</span>
           <span>⏱️ {avgResponseTime.toFixed(1)}s avg</span>
-          <span>🤖 {decisions.length} adaptations</span>
         </div>
       </div>
+
+      <AIChatBot context={`Student is practicing: ${currentQuestion.topic} (${currentQuestion.difficulty}). Question: ${currentQuestion.question}`} />
     </div>
   );
 };

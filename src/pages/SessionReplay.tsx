@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { generateDemoReplayTimeline, DEMO_EVENTS } from '@/lib/demo-engine';
 import { TRAIT_DEFINITIONS, CATEGORY_COLORS, CATEGORY_LABELS, GenomeCategory } from '@/lib/genome-types';
-import { orchestrator } from '@/lib/adaptive-engine';
 import { HeatmapCollector } from '@/lib/heatmap-engine';
-import DecisionTimeline from '@/components/DecisionTimeline';
 import AttentionHeatmap from '@/components/AttentionHeatmap';
+import AIChatBot from '@/components/AIChatBot';
 
 const SessionReplay: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -16,15 +15,6 @@ const SessionReplay: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showDecisions, setShowDecisions] = useState(true);
-
-  // Generate orchestrator decisions for replay
-  useEffect(() => {
-    orchestrator.reset();
-    for (let t = 0; t <= 80; t++) {
-      orchestrator.inferDemo(t, persona);
-    }
-  }, [persona]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -41,7 +31,6 @@ const SessionReplay: React.FC = () => {
   if (!frame) return null;
 
   const progress = (currentIdx / (timeline.length - 1)) * 100;
-  const decisions = orchestrator.getDecisions().filter(d => d.sessionTimeSec <= frame.t);
   const heatmap = HeatmapCollector.generateDemoHeatmap(persona, Math.floor(currentIdx / 5));
   const heatmapSummary = HeatmapCollector.getDemoSummary(persona);
 
@@ -73,10 +62,6 @@ const SessionReplay: React.FC = () => {
             ))}
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <button onClick={() => setShowDecisions(!showDecisions)}
-              className={`px-2 py-1 rounded-lg text-[10px] font-heading border ${showDecisions ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}>
-              🤖 Decisions
-            </button>
             <button onClick={() => setShowHeatmap(!showHeatmap)}
               className={`px-2 py-1 rounded-lg text-[10px] font-heading border ${showHeatmap ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}>
               🔥 Heatmap
@@ -102,7 +87,7 @@ const SessionReplay: React.FC = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Indices */}
           <div className="card-premium p-5 space-y-4">
             <h3 className="font-heading font-semibold text-foreground">Indices at t={frame.t}s</h3>
@@ -147,7 +132,7 @@ const SessionReplay: React.FC = () => {
           </div>
 
           {/* Traits snapshot */}
-          <div className={`${showDecisions ? '' : 'lg:col-span-2'} card-premium p-5 space-y-3`}>
+          <div className="card-premium p-5 space-y-3">
             <h3 className="font-heading font-semibold text-foreground">24 Traits at t={frame.t}s</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {(Object.keys(CATEGORY_COLORS) as GenomeCategory[]).map(cat => {
@@ -166,16 +151,10 @@ const SessionReplay: React.FC = () => {
               })}
             </div>
           </div>
-
-          {/* Decision feed */}
-          {showDecisions && (
-            <div className="card-premium p-5 space-y-3">
-              <h3 className="font-heading font-semibold text-foreground">🤖 Adaptive Decisions</h3>
-              <DecisionTimeline decisions={decisions} compact />
-            </div>
-          )}
         </div>
       </div>
+
+      <AIChatBot context="Student is reviewing a session replay" />
     </div>
   );
 };

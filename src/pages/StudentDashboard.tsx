@@ -8,9 +8,9 @@ import AlertBanner from '@/components/AlertBanner';
 import ConsentModal from '@/components/ConsentModal';
 import PrivacyStatus from '@/components/PrivacyStatus';
 import SystemStatus from '@/components/SystemStatus';
-import DecisionTimeline from '@/components/DecisionTimeline';
 import TraitEvolution from '@/components/TraitEvolution';
 import SessionComparison from '@/components/SessionComparison';
+import AIChatBot from '@/components/AIChatBot';
 import { generateInsights } from '@/lib/insight-engine';
 import { GenomePayload, GenomeCategory, CATEGORY_COLORS, CATEGORY_LABELS, Insight } from '@/lib/genome-types';
 import { telemetry } from '@/lib/telemetry';
@@ -87,7 +87,6 @@ const StudentDashboard: React.FC = () => {
 
     if (sessionId) {
       saveGenomeSnapshot(sessionId, payload);
-      // Save orchestrator events
       const lastDecision = orchestrator.getLastDecision();
       if (lastDecision && lastDecision.tick === tick) {
         saveSessionEvent(sessionId, 'orchestrator_action', {
@@ -188,8 +187,6 @@ const StudentDashboard: React.FC = () => {
       setCompareB(s);
     }
   };
-
-  const decisions = orchestrator.getDecisions();
 
   // Compare view
   if (compareA && compareB) {
@@ -302,14 +299,6 @@ const StudentDashboard: React.FC = () => {
               <div className="space-y-4">
                 <InsightsPanel insights={insights} />
 
-                {/* Decision Timeline */}
-                {decisions.length > 0 && (
-                  <div className="card-premium p-4">
-                    <h3 className="font-heading font-semibold text-sm text-foreground mb-2">🤖 Adaptive Feed</h3>
-                    <DecisionTimeline decisions={decisions} compact />
-                  </div>
-                )}
-
                 <div className="card-premium p-4 space-y-3">
                   <h3 className="font-heading font-semibold text-sm text-foreground">📊 Session Stats</h3>
                   <div className="grid grid-cols-2 gap-2">
@@ -410,6 +399,8 @@ const StudentDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      <AIChatBot context={`Student genome score: ${Math.round(genome.overall_genome_score)}, Confusion: ${Math.round(genome.indices.confusion_index)}, Fatigue: ${Math.round(genome.indices.fatigue_index)}`} />
     </div>
   );
 };
