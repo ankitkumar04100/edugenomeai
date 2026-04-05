@@ -7,6 +7,10 @@
 
 ---
 
+**[Edugenome AI Demo App](https://edugenomeai.lovable.app)**
+
+---
+
 # 📚 TABLE OF CONTENTS — EduGenome AI
 
 ---
