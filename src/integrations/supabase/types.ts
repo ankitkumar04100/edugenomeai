@@ -14,6 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          hashed_key: string
+          id: string
+          last_used_at: string | null
+          name: string
+          org_id: string
+          revoked: boolean
+        }
+        Insert: {
+          created_at?: string
+          hashed_key: string
+          id?: string
+          last_used_at?: string | null
+          name: string
+          org_id: string
+          revoked?: boolean
+        }
+        Update: {
+          created_at?: string
+          hashed_key?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          org_id?: string
+          revoked?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string
+          after_json: Json | null
+          before_json: Json | null
+          created_at: string
+          id: string
+          ip: string | null
+          org_id: string | null
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          after_json?: Json | null
+          before_json?: Json | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          org_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          after_json?: Json | null
+          before_json?: Json | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          org_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_students: {
         Row: {
           class_id: string
@@ -137,6 +225,53 @@ export type Database = {
           },
         ]
       }
+      jobs: {
+        Row: {
+          created_at: string
+          id: string
+          max_retries: number
+          org_id: string | null
+          payload_json: Json | null
+          result_json: Json | null
+          retry_count: number
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_retries?: number
+          org_id?: string | null
+          payload_json?: Json | null
+          result_json?: Json | null
+          retry_count?: number
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_retries?: number
+          org_id?: string | null
+          payload_json?: Json | null
+          result_json?: Json | null
+          retry_count?: number
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics: {
         Row: {
           data: Json
@@ -165,6 +300,165 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          org_id: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          org_id?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          org_id?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_members: {
+        Row: {
+          id: string
+          joined_at: string
+          org_id: string
+          role_in_org: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          org_id: string
+          role_in_org?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          org_id?: string
+          role_in_org?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_settings: {
+        Row: {
+          allow_heatmap: boolean
+          allow_live_mode: boolean
+          allow_voice: boolean
+          id: string
+          org_id: string
+          retention_days: number
+          thresholds_json: Json
+          transcript_storage_default: boolean
+          updated_at: string
+        }
+        Insert: {
+          allow_heatmap?: boolean
+          allow_live_mode?: boolean
+          allow_voice?: boolean
+          id?: string
+          org_id: string
+          retention_days?: number
+          thresholds_json?: Json
+          transcript_storage_default?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allow_heatmap?: boolean
+          allow_live_mode?: boolean
+          allow_voice?: boolean
+          id?: string
+          org_id?: string
+          retention_days?: number
+          thresholds_json?: Json
+          transcript_storage_default?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orgs: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          created_at: string
+          description: string
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          key: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          key?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -195,6 +489,181 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      question_assets: {
+        Row: {
+          asset_type: string
+          id: string
+          question_id: string
+          url: string
+        }
+        Insert: {
+          asset_type: string
+          id?: string
+          question_id: string
+          url: string
+        }
+        Update: {
+          asset_type?: string
+          id?: string
+          question_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_assets_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_bank"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_bank: {
+        Row: {
+          created_at: string
+          created_by: string
+          difficulty: number
+          id: string
+          org_id: string | null
+          published: boolean
+          stem: string
+          subject: string | null
+          tags_json: Json | null
+          title: string
+          topic: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          difficulty?: number
+          id?: string
+          org_id?: string | null
+          published?: boolean
+          stem: string
+          subject?: string | null
+          tags_json?: Json | null
+          title: string
+          topic?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          difficulty?: number
+          id?: string
+          org_id?: string | null
+          published?: boolean
+          stem?: string
+          subject?: string | null
+          tags_json?: Json | null
+          title?: string
+          topic?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_bank_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_hints: {
+        Row: {
+          asset_url: string | null
+          content: string
+          hint_type: string
+          id: string
+          question_id: string
+        }
+        Insert: {
+          asset_url?: string | null
+          content: string
+          hint_type?: string
+          id?: string
+          question_id: string
+        }
+        Update: {
+          asset_url?: string | null
+          content?: string
+          hint_type?: string
+          id?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_hints_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_bank"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_options: {
+        Row: {
+          correct_answer: string
+          id: string
+          options_json: Json
+          question_id: string
+        }
+        Insert: {
+          correct_answer: string
+          id?: string
+          options_json?: Json
+          question_id: string
+        }
+        Update: {
+          correct_answer?: string
+          id?: string
+          options_json?: Json
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question_bank"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          allowed: boolean
+          id: string
+          permission_key: string
+          role: string
+        }
+        Insert: {
+          allowed?: boolean
+          id?: string
+          permission_key: string
+          role: string
+        }
+        Update: {
+          allowed?: boolean
+          id?: string
+          permission_key?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+        ]
       }
       session_events: {
         Row: {
@@ -264,6 +733,64 @@ export type Database = {
         }
         Relationships: []
       }
+      system_metrics_daily: {
+        Row: {
+          date: string
+          id: string
+          metrics_json: Json
+          org_id: string | null
+        }
+        Insert: {
+          date: string
+          id?: string
+          metrics_json?: Json
+          org_id?: string | null
+        }
+        Update: {
+          date?: string
+          id?: string
+          metrics_json?: Json
+          org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_metrics_daily_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permissions_override: {
+        Row: {
+          allowed: boolean
+          id: string
+          permission_key: string
+          user_id: string
+        }
+        Insert: {
+          allowed: boolean
+          id?: string
+          permission_key: string
+          user_id: string
+        }
+        Update: {
+          allowed?: boolean
+          id?: string
+          permission_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_override_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -282,12 +809,54 @@ export type Database = {
         }
         Relationships: []
       }
+      webhooks: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          events_json: Json
+          id: string
+          org_id: string
+          secret: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          events_json?: Json
+          id?: string
+          org_id: string
+          secret: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          events_json?: Json
+          id?: string
+          org_id?: string
+          secret?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       can_access_session: { Args: { _session_id: string }; Returns: boolean }
+      has_permission: {
+        Args: { _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -296,6 +865,8 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_org_admin: { Args: { _org_id: string }; Returns: boolean }
+      is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
     }
     Enums: {
