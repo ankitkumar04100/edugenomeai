@@ -57,6 +57,7 @@ const App = () => (
                 <Route path="/admin/jobs" element={<ExportsJobs />} />
                 <Route path="/admin/policies" element={<Policies />} />
                 <Route path="/admin/models" element={<ModelGovernance />} />
+                <Route path="/admin/verification" element={<Verification />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/docs" element={<Docs />} />
                 <Route path="/practice" element={<PracticePlayer />} />
