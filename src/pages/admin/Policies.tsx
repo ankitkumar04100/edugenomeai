@@ -27,7 +27,7 @@ const Policies: React.FC = () => {
   const updateSetting = async (field: string, value: any) => {
     if (!settings || !user) return;
     const before = { [field]: (settings as any)[field] };
-    await supabase.from('org_settings').update({ [field]: value }).eq('id', settings.id);
+    await supabase.from('org_settings').update({ [field]: value } as any).eq('id', settings.id);
     await supabase.from('audit_logs').insert({
       actor_user_id: user.id, org_id: selectedOrg, action: 'org_settings.changed',
       target_type: 'org_settings', target_id: settings.id,

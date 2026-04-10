@@ -81,28 +81,19 @@ const TeacherDashboard: React.FC = () => {
     .slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container flex items-center justify-between h-14 px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-lg">🧬</span>
-            <span className="font-heading font-bold text-foreground">EduGenome AI</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1 bg-secondary rounded-xl p-0.5">
-              {(['overview', 'analytics', 'classes'] as const).map(v => (
-                <button key={v} onClick={() => setActiveView(v)}
-                  className={`px-3 py-1 rounded-lg text-xs font-heading font-medium capitalize transition-all ${activeView === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
-                  {v}
-                </button>
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground font-heading">Teacher Dashboard</span>
+    <div>
+      <div className="container px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="font-heading text-xl font-bold text-foreground">Teacher Dashboard</h1>
+          <div className="flex gap-1 bg-secondary rounded-xl p-0.5">
+            {(['overview', 'analytics', 'classes'] as const).map(v => (
+              <button key={v} onClick={() => setActiveView(v)}
+                className={`px-3 py-1 rounded-lg text-xs font-heading font-medium capitalize transition-all ${activeView === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                {v}
+              </button>
+            ))}
           </div>
         </div>
-      </header>
-
-      <div className="container px-4 py-6">
         {activeView === 'analytics' && (
           <div className="max-w-3xl space-y-4">
             <h1 className="font-heading text-2xl font-bold text-foreground">📊 Cohort Analytics</h1>

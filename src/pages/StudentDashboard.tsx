@@ -191,42 +191,15 @@ const StudentDashboard: React.FC = () => {
   // Compare view
   if (compareA && compareB) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-          <div className="container flex items-center justify-between h-14 px-4">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="text-lg">🧬</span>
-              <span className="font-heading font-bold text-foreground">EduGenome AI</span>
-            </Link>
-          </div>
-        </header>
-        <div className="container px-4 py-6 max-w-2xl">
-          <SessionComparison sessionA={compareA} sessionB={compareB} onClose={() => { setCompareA(null); setCompareB(null); setCompareMode(false); }} />
-        </div>
+      <div className="container px-4 py-6 max-w-2xl">
+        <SessionComparison sessionA={compareA} sessionB={compareB} onClose={() => { setCompareA(null); setCompareB(null); setCompareMode(false); }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div>
       <ConsentModal open={showConsent} onAccept={handleConsentAccept} onDecline={() => setShowConsent(false)} />
-
-      <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container flex items-center justify-between h-14 px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-lg">🧬</span>
-            <span className="font-heading font-bold text-foreground">EduGenome AI</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <ConfusionFatigueBadges indices={genome.indices} />
-            {user ? (
-              <span className="text-xs text-muted-foreground font-heading">{profile?.display_name || user.email}</span>
-            ) : (
-              <Link to="/auth" className="text-xs text-primary hover:underline font-heading">Sign In</Link>
-            )}
-          </div>
-        </div>
-      </header>
 
       <div className="container px-4 py-6 space-y-4">
         <AlertBanner indices={genome.indices} />
