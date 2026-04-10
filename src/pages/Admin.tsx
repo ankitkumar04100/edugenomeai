@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Users, Shield, FileText, Brain, Webhook, Activity, ClipboardList, BookOpen, Download } from 'lucide-react';
+import { Building2, Users, Shield, FileText, Brain, Webhook, Activity, ClipboardList, BookOpen, Download, CheckCircle } from 'lucide-react';
 
 const cards = [
   { title: 'Organizations', desc: 'Manage multi-tenant orgs, members, and org settings', icon: Building2, path: '/admin/organizations', color: 'text-blue-600 bg-blue-50' },
@@ -14,6 +14,7 @@ const cards = [
   { title: 'Audit Logs', desc: 'Track all sensitive actions with before/after diffs', icon: ClipboardList, path: '/admin/audit', color: 'text-red-600 bg-red-50' },
   { title: 'Content Manager', desc: 'Question bank CRUD, hints, assets, publish control', icon: BookOpen, path: '/admin/content', color: 'text-cyan-600 bg-cyan-50' },
   { title: 'Exports & Jobs', desc: 'PDF exports, webhook retries, job queue status', icon: Download, path: '/admin/jobs', color: 'text-orange-600 bg-orange-50' },
+  { title: 'System Verification', desc: 'No-skip checklist: routes, tables, determinism, features', icon: CheckCircle, path: '/admin/verification', color: 'text-emerald-600 bg-emerald-50' },
 ];
 
 const Admin: React.FC = () => {
