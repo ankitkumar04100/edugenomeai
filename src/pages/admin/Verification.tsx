@@ -75,8 +75,8 @@ const Verification: React.FC = () => {
     updateCheck('Demo Determinism', 'running');
     try {
       const { generateDemoPayload } = await import('@/lib/demo-engine');
-      const t1_run1 = generateDemoPayload(10, 'visual_thinker');
-      const t1_run2 = generateDemoPayload(10, 'visual_thinker');
+      const t1_run1 = generateDemoPayload('visual_thinker', 10);
+      const t1_run2 = generateDemoPayload('visual_thinker', 10);
       const match = t1_run1.overall_genome_score === t1_run2.overall_genome_score;
       updateCheck('Demo Determinism', match ? 'pass' : 'fail',
         match ? 'Same input → same output confirmed' : 'MISMATCH: demo is not deterministic!');

@@ -28,6 +28,7 @@ import Monitoring from "./pages/admin/Monitoring.tsx";
 import ExportsJobs from "./pages/admin/ExportsJobs.tsx";
 import Policies from "./pages/admin/Policies.tsx";
 import ModelGovernance from "./pages/admin/ModelGovernance.tsx";
+import Verification from "./pages/admin/Verification.tsx";
 
 const queryClient = new QueryClient();
 
