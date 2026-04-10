@@ -6,15 +6,52 @@ import { HeatmapCollector } from '@/lib/heatmap-engine';
 import AttentionHeatmap from '@/components/AttentionHeatmap';
 import AIChatBot from '@/components/AIChatBot';
 
+// Generate session narrative from timeline
+function generateNarrative(timeline: ReturnType<typeof generateDemoReplayTimeline>): string {
+  const parts: string[] = [];
+  let lastState = 'stable';
+  
+  for (let i = 0; i < timeline.length; i++) {
+    const f = timeline[i];
+    const ci = f.indices.confusion_index;
+    const fi = f.indices.fatigue_index;
+    
+    if (ci > 70 && lastState !== 'confusion') {
+      parts.push(`confusion spike at ${f.t}s`);
+      lastState = 'confusion';
+    } else if (fi > 65 && lastState !== 'fatigue') {
+      parts.push(`fatigue rising at ${f.t}s`);
+      lastState = 'fatigue';
+    } else if (ci < 40 && fi < 40 && lastState !== 'stable' && lastState !== 'start') {
+      parts.push(`recovery at ${f.t}s`);
+      lastState = 'stable';
+    }
+    
+    if (f.events.length > 0) {
+      f.events.forEach(evt => {
+        if (evt.toLowerCase().includes('microbreak')) parts.push(`microbreak at ${f.t}s`);
+        if (evt.toLowerCase().includes('intervention')) parts.push(`intervention at ${f.t}s`);
+      });
+    }
+  }
+  
+  const last = timeline[timeline.length - 1];
+  const finalScore = last.indices.confusion_index < 40 && last.indices.fatigue_index < 50 ? 'finish strong' : 'finish with elevated signals';
+  
+  return `Start stable → ${parts.join(' → ')} → ${finalScore}`;
+}
+
 const SessionReplay: React.FC = () => {
   const [searchParams] = useSearchParams();
   const persona = searchParams.get('persona') || 'visual_thinker';
 
   const timeline = useRef(generateDemoReplayTimeline(persona)).current;
+  const narrative = useRef(generateNarrative(timeline)).current;
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showNarrative, setShowNarrative] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -35,26 +72,29 @@ const SessionReplay: React.FC = () => {
   const heatmapSummary = HeatmapCollector.getDemoSummary(persona);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container flex items-center justify-between h-14 px-4">
-          <Link to="/student" className="flex items-center gap-2">
-            <span className="text-lg">🧬</span>
-            <span className="font-heading font-bold text-foreground">EduGenome AI</span>
-          </Link>
-          <span className="text-xs text-muted-foreground font-heading">Session Replay</span>
-        </div>
-      </header>
-
+    <div>
       <div className="container px-4 py-6 space-y-6">
+        {/* Session Narrative */}
+        <div className="card-premium p-4">
+          <button onClick={() => setShowNarrative(!showNarrative)} className="flex items-center justify-between w-full">
+            <h3 className="font-heading font-semibold text-sm text-foreground">📖 Session Narrative</h3>
+            <span className="text-[10px] text-primary font-heading">{showNarrative ? 'Hide' : 'Show'}</span>
+          </button>
+          {showNarrative && (
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed italic bg-secondary/50 rounded-xl p-3">
+              {narrative}
+            </p>
+          )}
+        </div>
+
         {/* Controls */}
         <div className="card-premium p-4 flex items-center gap-4">
           <button onClick={() => setIsPlaying(!isPlaying)}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-2xl text-sm font-heading font-semibold hover:opacity-90">
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-2xl text-sm font-heading font-semibold hover:opacity-90 transition-opacity">
             {isPlaying ? '⏸ Pause' : '▶ Play'}
           </button>
           <div className="flex items-center gap-2">
-            {[1, 2].map(s => (
+            {[1, 2, 4].map(s => (
               <button key={s} onClick={() => setSpeed(s)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-heading font-semibold border transition-all ${speed === s ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground'}`}>
                 {s}×
@@ -70,18 +110,28 @@ const SessionReplay: React.FC = () => {
           <div className="text-sm font-heading text-foreground">t = {frame.t}s / 120s</div>
         </div>
 
-        {/* Scrubber */}
+        {/* Scrubber with event markers */}
         <div className="card-premium p-4 space-y-3">
-          <input type="range" min={0} max={timeline.length - 1} value={currentIdx}
-            onChange={e => { setCurrentIdx(+e.target.value); setIsPlaying(false); }}
-            className="w-full h-2 bg-secondary rounded-full appearance-none cursor-pointer accent-primary" />
+          <div className="relative">
+            <input type="range" min={0} max={timeline.length - 1} value={currentIdx}
+              onChange={e => { setCurrentIdx(+e.target.value); setIsPlaying(false); }}
+              className="w-full h-2 bg-secondary rounded-full appearance-none cursor-pointer accent-primary" />
+            {/* Event markers on scrubber */}
+            <div className="absolute top-0 left-0 right-0 h-2 pointer-events-none">
+              {timeline.map((f, i) => f.events.length > 0 ? (
+                <div key={i} className="absolute w-1 h-3 bg-amber-400 rounded-full -top-0.5"
+                  style={{ left: `${(i / (timeline.length - 1)) * 100}%` }}
+                  title={f.events.join(', ')} />
+              ) : null)}
+            </div>
+          </div>
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>0s</span><span>{Math.round(progress)}%</span><span>120s</span>
           </div>
           {frame.events.length > 0 && (
             <div className="space-y-1">
               {frame.events.map((evt, i) => (
-                <div key={i} className="text-xs px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl">⚡ {evt}</div>
+                <div key={i} className="text-xs px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl animate-fade-in">⚡ {evt}</div>
               ))}
             </div>
           )}
