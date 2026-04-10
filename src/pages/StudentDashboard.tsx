@@ -202,12 +202,14 @@ const StudentDashboard: React.FC = () => {
       <ConsentModal open={showConsent} onAccept={handleConsentAccept} onDecline={() => setShowConsent(false)} />
 
       <div className="container px-4 py-6 space-y-4">
-        <AlertBanner indices={genome.indices} />
-
         <div className="flex flex-wrap gap-4 items-center justify-between">
-          <SystemStatus mode={mode} isRunning={isRunning} wsConnected={false} lastUpdateMs={lastUpdateMs} traitEngineMode={engineMode} />
-          <PrivacyStatus cameraOn={cameraOn} metricsStreaming={isRunning} faceConfidence={faceConfidence} />
+          <ConfusionFatigueBadges indices={genome.indices} />
+          <div className="flex flex-wrap gap-4 items-center">
+            <SystemStatus mode={mode} isRunning={isRunning} wsConnected={false} lastUpdateMs={lastUpdateMs} traitEngineMode={engineMode} />
+            <PrivacyStatus cameraOn={cameraOn} metricsStreaming={isRunning} faceConfidence={faceConfidence} />
+          </div>
         </div>
+        <AlertBanner indices={genome.indices} />
 
         <SessionControls
           isRunning={isRunning} mode={mode} persona={persona}
