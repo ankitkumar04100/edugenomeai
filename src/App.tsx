@@ -28,6 +28,7 @@ import Monitoring from "./pages/admin/Monitoring.tsx";
 import ExportsJobs from "./pages/admin/ExportsJobs.tsx";
 import Policies from "./pages/admin/Policies.tsx";
 import ModelGovernance from "./pages/admin/ModelGovernance.tsx";
+import Verification from "./pages/admin/Verification.tsx";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/admin/jobs" element={<ExportsJobs />} />
                 <Route path="/admin/policies" element={<Policies />} />
                 <Route path="/admin/models" element={<ModelGovernance />} />
+                <Route path="/admin/verification" element={<Verification />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/docs" element={<Docs />} />
                 <Route path="/practice" element={<PracticePlayer />} />

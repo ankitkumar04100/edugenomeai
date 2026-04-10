@@ -9,6 +9,8 @@ import { TTSHintButton, DictationButton } from '@/components/VoiceControls';
 import AttentionHeatmap from '@/components/AttentionHeatmap';
 import MicrobreakScreen from '@/components/MicrobreakScreen';
 import AIChatBot from '@/components/AIChatBot';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface QuestionResult {
   questionId: string;
@@ -25,6 +27,12 @@ const DIFFICULTY_COLORS: Record<Difficulty, string> = {
   medium: 'text-amber-600 bg-amber-50 border-amber-200',
   hard: 'text-red-600 bg-red-50 border-red-200',
 };
+
+function mapDifficultyLevel(level: number): Difficulty {
+  if (level <= 2) return 'easy';
+  if (level <= 3) return 'medium';
+  return 'hard';
+}
 
 const PracticePlayer: React.FC = () => {
   const [currentDifficulty, setCurrentDifficulty] = useState<Difficulty>('easy');
@@ -46,7 +54,48 @@ const PracticePlayer: React.FC = () => {
   const startTimeRef = useRef(Date.now());
   const tickRef = useRef(0);
 
-  const questions = QUIZ_QUESTIONS.filter(q => q.difficulty === currentDifficulty);
+  // Fetch DB questions
+  const { data: dbQuestions } = useQuery({
+    queryKey: ['practice-questions'],
+    queryFn: async () => {
+      const { data: questions } = await supabase
+        .from('question_bank')
+        .select('*')
+        .eq('published', true)
+        .order('difficulty', { ascending: true });
+      if (!questions?.length) return null;
+
+      const questionIds = questions.map(q => q.id);
+      const [{ data: options }, { data: hints }] = await Promise.all([
+        supabase.from('question_options').select('*').in('question_id', questionIds),
+        supabase.from('question_hints').select('*').in('question_id', questionIds),
+      ]);
+
+      return questions.map(q => {
+        const qOpts = options?.find(o => o.question_id === q.id);
+        const qHints = hints?.filter(h => h.question_id === q.id) || [];
+        const difficulty = mapDifficultyLevel(q.difficulty);
+        const optionsArr = (qOpts?.options_json as string[]) || [];
+
+        return {
+          id: q.id,
+          type: (q.type === 'mcq' ? 'mcq' : 'text_input') as QuizQuestion['type'],
+          difficulty,
+          question: q.stem,
+          options: optionsArr.length > 0 ? optionsArr : undefined,
+          correctAnswer: qOpts?.correct_answer || '',
+          hints: qHints.length > 0
+            ? qHints.map(h => ({ type: (h.hint_type || 'text') as HintType, content: h.content }))
+            : [{ type: 'text' as HintType, content: 'Think carefully about this problem.' }],
+          topic: q.topic || q.subject || 'General',
+        } as QuizQuestion;
+      });
+    },
+  });
+
+  // Use DB questions if available, otherwise fallback to hardcoded
+  const allQuestions: QuizQuestion[] = dbQuestions && dbQuestions.length > 0 ? dbQuestions : QUIZ_QUESTIONS;
+  const questions = allQuestions.filter(q => q.difficulty === currentDifficulty);
   const currentQuestion = questions[currentQuestionIdx];
 
   // Run orchestrator on a timer
@@ -138,7 +187,7 @@ const PracticePlayer: React.FC = () => {
 
   const handleNext = () => {
     const nextIdx = currentQuestionIdx + 1;
-    const nextQuestions = QUIZ_QUESTIONS.filter(q => q.difficulty === currentDifficulty);
+    const nextQuestions = allQuestions.filter(q => q.difficulty === currentDifficulty);
     if (nextIdx < nextQuestions.length) {
       setCurrentQuestionIdx(nextIdx);
     } else {
@@ -166,51 +215,47 @@ const PracticePlayer: React.FC = () => {
 
   if (sessionComplete) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-          <div className="container flex items-center justify-between h-14 px-4">
-            <Link to="/student" className="flex items-center gap-2">
-              <span className="text-lg">🧬</span>
-              <span className="font-heading font-bold text-foreground">EduGenome AI</span>
-            </Link>
-            <span className="text-xs text-muted-foreground font-heading">Practice Complete</span>
+      <div className="container px-4 py-8 max-w-2xl space-y-6">
+        <h1 className="font-heading text-2xl font-bold text-foreground">🎉 Practice Session Complete</h1>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="card-premium p-4 text-center">
+            <div className="text-2xl font-heading font-bold text-primary">{totalCorrect}/{results.length}</div>
+            <div className="text-xs text-muted-foreground">Correct</div>
           </div>
-        </header>
-        <div className="container px-4 py-8 max-w-2xl space-y-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground">🎉 Practice Session Complete</h1>
+          <div className="card-premium p-4 text-center">
+            <div className="text-2xl font-heading font-bold text-foreground">{avgResponseTime.toFixed(1)}s</div>
+            <div className="text-xs text-muted-foreground">Avg Response</div>
+          </div>
+          <div className="card-premium p-4 text-center">
+            <div className="text-2xl font-heading font-bold text-foreground">{results.reduce((a, r) => a + r.hintsUsed.length, 0)}</div>
+            <div className="text-xs text-muted-foreground">Hints Used</div>
+          </div>
+        </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="card-premium p-4 text-center">
-              <div className="text-2xl font-heading font-bold text-primary">{totalCorrect}/{results.length}</div>
-              <div className="text-xs text-muted-foreground">Correct</div>
-            </div>
-            <div className="card-premium p-4 text-center">
-              <div className="text-2xl font-heading font-bold text-foreground">{avgResponseTime.toFixed(1)}s</div>
-              <div className="text-xs text-muted-foreground">Avg Response</div>
-            </div>
-            <div className="card-premium p-4 text-center">
-              <div className="text-2xl font-heading font-bold text-foreground">{results.reduce((a, r) => a + r.hintsUsed.length, 0)}</div>
-              <div className="text-xs text-muted-foreground">Hints Used</div>
+        {mistakes.length > 0 && (
+          <div className="card-premium p-5">
+            <h3 className="font-heading font-semibold text-foreground mb-3">Mistake Fingerprint</h3>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {(['logical', 'visual', 'conceptual'] as const).map(type => (
+                <div key={type} className={`text-center p-2 rounded-xl ${type === fingerprint.dominantType ? 'bg-primary/10 border border-primary/30' : 'bg-secondary'}`}>
+                  <div className="text-lg font-heading font-bold text-foreground">{fingerprint[type]}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{type}</div>
+                </div>
+              ))}
             </div>
           </div>
+        )}
 
-          {mistakes.length > 0 && (
-            <div className="card-premium p-5">
-              <h3 className="font-heading font-semibold text-foreground mb-3">Mistake Fingerprint</h3>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                {(['logical', 'visual', 'conceptual'] as const).map(type => (
-                  <div key={type} className={`text-center p-2 rounded-xl ${type === fingerprint.dominantType ? 'bg-primary/10 border border-primary/30' : 'bg-secondary'}`}>
-                    <div className="text-lg font-heading font-bold text-foreground">{fingerprint[type]}</div>
-                    <div className="text-xs text-muted-foreground capitalize">{type}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+        <div className="flex items-center gap-3">
           <Link to="/student" className="inline-block px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-heading font-semibold text-sm hover:opacity-90">
             Back to Dashboard
           </Link>
+          {dbQuestions && dbQuestions.length > 0 && (
+            <span className="text-[10px] px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded-lg font-heading">
+              📚 Questions from Content Bank
+            </span>
+          )}
         </div>
         <AIChatBot context="Student just completed a practice session" />
       </div>
@@ -224,25 +269,15 @@ const PracticePlayer: React.FC = () => {
   const isStepByStep = uiMode === 'STEP_BY_STEP';
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container flex items-center justify-between h-14 px-4">
-          <Link to="/student" className="flex items-center gap-2">
-            <span className="text-lg">🧬</span>
-            <span className="font-heading font-bold text-foreground">EduGenome AI</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            {uiMode !== 'NORMAL' && (
-              <span className="text-[10px] px-2 py-0.5 bg-accent/20 border border-accent/30 rounded-lg text-foreground font-heading">
-                {isMinimal ? '🔕 Focus Mode' : '📋 Step-by-Step'}
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground font-heading">Practice Player</span>
-          </div>
-        </div>
-      </header>
-
+    <div>
       <div className={`container px-4 py-8 space-y-6 ${isMinimal ? 'max-w-lg' : 'max-w-3xl'}`}>
+        {/* Source indicator */}
+        {dbQuestions && dbQuestions.length > 0 && (
+          <div className="text-[10px] px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded-lg font-heading inline-block">
+            📚 Questions from Content Bank
+          </div>
+        )}
+
         {/* Difficulty stepper */}
         {!isMinimal && (
           <div className="flex items-center gap-2">
@@ -256,11 +291,18 @@ const PracticePlayer: React.FC = () => {
                 )}
               </React.Fragment>
             ))}
-            <div className="ml-auto text-xs text-muted-foreground font-heading">Q{currentQuestionIdx + 1}/{questions.length}</div>
+            <div className="ml-auto text-xs text-muted-foreground font-heading">
+              Q{currentQuestionIdx + 1}/{questions.length}
+              {uiMode !== 'NORMAL' && (
+                <span className="ml-2 text-[10px] px-2 py-0.5 bg-accent/20 border border-accent/30 rounded-lg">
+                  {isMinimal ? '🔕 Focus' : '📋 Step-by-Step'}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Question card - full width now */}
+        {/* Question card */}
         <div className="card-premium p-6 space-y-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className={`px-2 py-0.5 rounded-lg border capitalize ${DIFFICULTY_COLORS[currentQuestion.difficulty]}`}>
